@@ -10,13 +10,13 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
 
   const handleLogin = () => {
-    router.replace('/');
+    router.replace('/dashboard');
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.logoWrapper}>
-        <Image source={require('../../assets/images/ican-logo.png')} style={styles.logo} />
+        <Image source={require('../../assets/images/logo-main.png')} style={styles.logo} />
       </View>
       <View style={styles.formContainer}>
         <Text style={styles.title}>تسجيل دخول</Text>
