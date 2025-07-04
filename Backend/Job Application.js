@@ -4,6 +4,10 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 
+// add supabase
+const { createClient } = require('@supabase/supabase-js');
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -34,20 +38,35 @@ const upload = multer({
 
 // Endpoint to receive job application
 app.post('/apply', upload.single('resume'), (req, res) => {
-  const { fullName, email, contact, position } = req.body;
+  const { fullName, email, position } = req.body;
   const resume = req.file;
 
-  if (!fullName || !email || !contact || !position || !resume) {
+  if (!fullName || !email || !position || !resume) {
     return res.status(400).json({ message: 'الرجاء إدخال جميع الحقول وتحميل السيرة الذاتية.' });
   }
 
-  // TODO: save data to database, send emails, etc.
+  (async () => {
+    const { data, error } = await supabase
+      .from('applications')
+      .insert([
+        {
+          name: fullName,
+          email: email,
+          job: position
+        }
+      ]);
 
-  const resumeUrl = `${req.protocol}://${req.get('host')}/uploads/${resume.filename}`;
-  res.status(201).json({
-    message: 'تم التقديم بنجاح!',
-    data: { fullName, email, contact, position, resumeUrl }
-  });
+    if (error) {
+      console.error(error);
+      return res.status(500).json({ message: 'فشل حفظ البيانات في قاعدة البيانات.' });
+    }
+
+    const resumeUrl = `${req.protocol}://${req.get('host')}/uploads/${resume.filename}`;
+    res.status(201).json({
+      message: 'تم التقديم بنجاح!',
+      data: { number: data[0].number, name: data[0].name, email: data[0].email, job: data[0].job, resumeUrl }
+    });
+  })();
 });
 
 // Simple GET route to test
