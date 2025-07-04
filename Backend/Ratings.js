@@ -1,4 +1,4 @@
-// ican.js
+// ratings.js
 require('dotenv').config();
 const express = require('express');
 const multer = require('multer');
@@ -32,33 +32,21 @@ const upload = multer({
   }
 });
 
-// weekly reports endpoint
-app.post('/reports/weekly', upload.single('report'), (req, res) => {
+// ratings upload endpoint
+app.post('/ratings', upload.single('ratingFile'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: 'فقط ملفات PDF مدعومة' });
   }
-  const reportUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+  const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
   res.status(201).json({
-    message: 'تم رفع التقرير الأسبوعي بنجاح',
-    file: reportUrl
-  });
-});
-
-// monthly reports endpoint
-app.post('/reports/monthly', upload.single('report'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ message: 'فقط ملفات PDF مدعومة' });
-  }
-  const reportUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-  res.status(201).json({
-    message: 'تم رفع التقرير الشهري بنجاح',
-    file: reportUrl
+    message: 'تم رفع ملف التقييم بنجاح',
+    file: fileUrl
   });
 });
 
 // simple test route
 app.get('/', (req, res) => {
-  res.send('📄 خادم ICAN للتقارير يعمل');
+  res.send('⭐ خادم صفحة التقييمات يعمل');
 });
 
 // global error handler
@@ -67,4 +55,4 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 خادم ICAN يعمل على http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`🚀 خادم التقييمات يعمل على http://localhost:${PORT}`));
