@@ -1,39 +1,64 @@
-// transport-backend.js
+// backend/transport-backend.js
 require('dotenv').config();
 const express = require('express');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-// Parse JSON and URL-encoded form data
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // Handles the form input :contentReference[oaicite:1]{index=1}
+app.use(express.urlencoded({ extended: true }));
 
-// Route to receive the transport form
-app.post('/transport', (req, res) => {
+// POST transport form
+app.post('/transport', async (req, res) => {
   const {
     houseNum, building, compound, street, area,
     periods = [], days = [], agree
   } = req.body;
 
-  // Periods and days may be sent as single strings
   const periodsArr = Array.isArray(periods) ? periods : periods ? [periods] : [];
   const daysArr = Array.isArray(days) ? days : days ? [days] : [];
 
-  // Basic validation
   if (!houseNum || !building || !area || agree !== 'on') {
     return res.status(400).json({
       message: 'الرجاء تعبئة الحقول المطلوبة والموافقة على الشروط'
     });
   }
 
-  res.json({
-    message: 'تم إرسال بيانات المواصلات بنجاح!',
-    data: {
-      address: { houseNum, building, compound, street, area },
-      periods: periodsArr,
-      days: daysArr
+  try {
+    const { data, error } = await supabase
+      .from('transport_requests')
+      .insert([
+        {
+          house_num: houseNum,
+          building,
+          compound,
+          street,
+          area,
+          periods: periodsArr,
+          days: daysArr,
+          agreed: true
+        }
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      console.error(error);
+      return res.status(500).json({ message: 'فشل حفظ بيانات المواصلات في قاعدة البيانات.' });
     }
-  });
+
+    res.json({
+      message: 'تم إرسال بيانات المواصلات بنجاح!',
+      data
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'حدث خطأ في الخادم' });
+  }
 });
 
 // Test route
@@ -46,7 +71,7 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ message: err.message || 'خطأ في الخادم' });
 });
 
-const PORT = process.env.PORT || 4000;
+// start
 app.listen(PORT, () =>
-  console.log(`✅ Server running on http://localhost:${PORT}`)
+  console.log(`✅ Transport server running on http://localhost:${PORT}`)
 );
